@@ -1,5 +1,7 @@
 from myDB import mydb, mycursor
 from flask import jsonify, request
+from datetime import datetime
+import time
 
 def get_username():
     try:
@@ -212,7 +214,7 @@ def remove_user():
             "message": "Invalid Data"
         }
         return jsonify(response)
-    req= request.get_json()
+    req = request.get_json()
     if "username" not in req:
         response = {
             "data": req,
@@ -240,6 +242,178 @@ def remove_user():
         }
         return jsonify(response)
 
+def add_bus():
+    if not request.data or not request.is_json:
+        response = {
+            "data": None,
+            "status": False,
+            "message": "Invalid Data"
+        }
+        return jsonify(response)
+    req = request.get_json()
+    if "location" not in req or "bus_name" not in req or "price" not in req \
+            or "bus_type" not in req or "created_date" not in req:
+        response = {
+            "data": req,
+            "status": False,
+            "message": "Invalid Arguments"
+        }
+        return jsonify(response)
+    if req['bus_name'] == "" or req['price'] == "" \
+            or req['bus_type'] == "" or req['location'] == "":
+        response = {
+            "data": req,
+            "status": False,
+            "message": "All field required!"
+        }
+        return jsonify(response)
+
+    type_id = 1 if req['bus_type'] == "Express" else 2
+
+    try:
+        bus_list = list()
+        sql = 'SELECT bus_name FROM bus'
+        mycursor.execute(sql)
+        result = mycursor.fetchall()
+        for bus in result:
+            bus_list.append(bus[0])
+
+        if req['bus_name'] in bus_list:
+            response = {
+                "data": req,
+                "status": False,
+                "message": "Bus Name already exist"
+            }
+            return jsonify(response)
+    except Exception as e:
+        response = {
+            "data": req,
+            "status": False,
+            "message": f"{e}"
+        }
+        return jsonify(response)
+
+    try:
+        sql = 'SELECT loc_id FROM locations ' \
+              'WHERE loc_name = %s'
+        values = [req['location'], ]
+        mycursor.execute(sql, values)
+        result = mycursor.fetchone()
+        loc_id = result[0]
+    except Exception as e:
+        response = {
+            "data": req,
+            "status": False,
+            "message": f"{e}"
+        }
+        return jsonify(response)
+
+    try:
+        sql = 'INSERT INTO bus (bus_name, loc_id, price, type_id, created_date) ' \
+              'VALUES (%s,%s,%s,%s,%s)'
+        values = [req['bus_name'], loc_id, float(req['price']), type_id, str(req['created_date']), ]
+        mycursor.execute(sql, values)
+        mydb.commit()
+
+        sql = 'SELECT id FROM bus ORDER BY id DESC LIMIT 1'
+        mycursor.execute(sql)
+        result = mycursor.fetchone()
+        bus_id = result[0]
+
+        for x in range(1, 16):
+            sql = 'INSERT INTO bus_seat (bus_id, seat_name) ' \
+                  'VALUES (%s, %s)'
+            values = [bus_id, str(x), ]
+            mycursor.execute(sql, values)
+            mydb.commit()
+            time.sleep(0.3)
+
+    except Exception as e:
+        response = {
+            "data": req,
+            "status": False,
+            "message": f"{e}"
+        }
+        return jsonify(response)
+    else:
+        response = {
+            "data": req,
+            "status": True,
+            "message": "New Bus Added Successfully!"
+        }
+        return jsonify(response)
+
+def update_bus():
+    if not request.data or not request.is_json:
+        response = {
+            "data": None,
+            "status": False,
+            "message": "Invalid Data"
+        }
+        return jsonify(response)
+    req = request.get_json()
+    if "bus_id" not in req or "price" not in req or "status" not in req:
+        response = {
+            "data": req,
+            "status": False,
+            "message": "Invalid Arguments"
+        }
+        return jsonify(response)
+
+    if req['bus_id'] == "" or req['price'] == "" or req['status'] == "":
+        response = {
+            "data": req,
+            "status": False,
+            "message": "All field required!"
+        }
+        return jsonify(response)
+
+    try:
+        bus_list = list()
+        sql = 'SELECT id FROM bus'
+        mycursor.execute(sql)
+        result = mycursor.fetchall()
+        for bus in result:
+            bus_list.append(bus[0])
+    except Exception as e:
+        response = {
+            "data": req,
+            "status": False,
+            "message": f"{e}"
+        }
+        return jsonify(response)
+
+    if int(req['bus_id']) not in bus_list:
+        response = {
+            "data": req,
+            "status": False,
+            "message": "Invalid Bus ID"
+        }
+        return jsonify(response)
+
+    status = 1 if req['status'] == "Active" else 0
+
+    try:
+        sql = 'UPDATE bus SET price=%s, status=%s ' \
+              'WHERE id=%s '
+        values = [float(req['price']), status, int(req['bus_id']), ]
+        mycursor.execute(sql, values)
+        mydb.commit()
+    except Exception as e:
+        response = {
+            "data": req,
+            "status": False,
+            "message": f"{e}"
+        }
+        return jsonify(response)
+    else:
+        response = {
+            "data": req,
+            "status": True,
+            "message": "Update Successful!"
+        }
+        return jsonify(response)
+
 def get_location_names():
     try:
         sql = 'SELECT loc_name FROM locations'
@@ -260,6 +434,87 @@ def get_location_names():
             "data": locations,
             "status": True,
             "message": "Call Success!"
+        }
+        return jsonify(response)
+
+def add_trip():
+    if not request.data or not request.is_json:
+        response = {
+            "data": None,
+            "status": False,
+            "message": "Invalid Data"
+        }
+        return jsonify(response)
+    req = request.get_json()
+    if "location" not in req or "bus_name" not in req \
+            or "depart_date" not in req or "depart_time" not in req:
+        response = {
+            "data": req,
+            "status": False,
+            "message": "Invalid Arguments"
+        }
+        return jsonify(response)
+
+    created_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    temp = req['depart_date'].split("-")
+    temp.reverse()
+    depart_date = "-".join(temp)
+
+    depart_time = f"{depart_date} {req['depart_time']}"
+
+    try:
+        sql = 'SELECT loc_id FROM locations WHERE loc_name=%s'
+        values = [req['location'], ]
+        mycursor.execute(sql, values)
+        result = mycursor.fetchone()
+        loc_id = result[0]
+    except Exception as e:
+        response = {
+            "data": req,
+            "status": False,
+            "message": f"{e}"
+        }
+        return jsonify(response)
+
+    try:
+        sql = 'SELECT id FROM bus WHERE bus_name=%s'
+        values = [req['bus_name'], ]
+        mycursor.execute(sql, values)
+        result = mycursor.fetchone()
+        bus_id = result[0]
+    except Exception as e:
+        response = {
+            "data": req,
+            "status": False,
+            "message": f"{e}"
+        }
+        return jsonify(response)
+
+    try:
+        sql = 'INSERT INTO trip(loc_id, bus_id, departure_date, departure_time, created_at) ' \
+              'VALUES (%s, %s, %s, %s, %s)'
+        values = [loc_id, bus_id, depart_date, depart_time, created_date, ]
+        mycursor.execute(sql, values)
+        mydb.commit()
+
+        sql = 'UPDATE bus SET status=0 ' \
+              'WHERE id=%s'
+        values = [bus_id, ]
+        mycursor.execute(sql, values)
+        mydb.commit()
+    except Exception as e:
+        response = {
+            "data": req,
+            "status": False,
+            "message": f"{e}"
+        }
+        return jsonify(response)
+    else:
+        response = {
+            "data": req,
+            "status": True,
+            "message": "New Trip Added Successfully!"
         }
         return jsonify(response)
 

@@ -116,6 +116,10 @@ def get_active_trip():
 def get_active_bus():
     return admin.get_active_bus()
 
+@app.route('/addTrip', methods=['POST'])
+def add_trip():
+    return admin.add_trip()
+
 @app.route('/updateTrip', methods=["POST"])
 def update_trip():
     return admin.update_trip()
@@ -143,6 +147,14 @@ def get_username():
 @app.route("/admin/removeUser", methods=["POST"])
 def remove_user():
     return admin.remove_user()
+
+@app.route("/admin/addBus", methods=["POST"])
+def add_bus():
+    return admin.add_bus()
+
+@app.route("/admin/updateBus", methods=["POST"])
+def update_bus():
+    return admin.update_bus()
 
 if __name__ == '__main__':
     app.run(debug=True)
