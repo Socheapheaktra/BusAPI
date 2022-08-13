@@ -11,6 +11,7 @@ def get_people():
             "status": False,
             "message": f"{err}"
         }
+        return jsonify(response)
     else:
         body = list()
         result = mycursor.fetchall()
@@ -41,8 +42,9 @@ def add_people():
         return jsonify(response)
     req = request.get_json()
     try:
-        sql = 'INSERT INTO test VALUES (%s, %s, %s, %s, %s)'
-        values = [req['id'], req['first_name'], req['last_name'], req['gender'], req['country'],]
+        sql = 'INSERT INTO test(first_name, last_name, gender, country) ' \
+              'VALUES (%s, %s, %s, %s)'
+        values = [req['first_name'], req['last_name'], req['gender'], req['country'],]
         mycursor.execute(sql, values)
         mydb.commit()
     except Exception as err:
