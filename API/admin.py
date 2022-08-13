@@ -789,7 +789,7 @@ def show_trip_table():
 
 def show_bus_table():
     try:
-        sql = 'SELECT DISTINCT bus.id, bus.bus_name, bus_type.type_name, bus.bus_desc, ' \
+        sql = 'SELECT bus.id, bus.bus_name, bus_type.type_name, bus.bus_desc, ' \
               'bus.num_of_seat, bus.price, bus.status ' \
               'FROM bus ' \
               'INNER JOIN bus_type ON bus.type_id = bus_type.id'

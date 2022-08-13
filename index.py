@@ -1,6 +1,6 @@
 from flask import Flask
 
-from API import (login, register, user, admin)
+from API import (login, register, user, admin, flutter)
 
 app = Flask(__name__)
 
@@ -155,6 +155,14 @@ def add_bus():
 @app.route("/admin/updateBus", methods=["POST"])
 def update_bus():
     return admin.update_bus()
+
+@app.route('/flutter/getPeople', methods=['GET'])
+def get_people():
+    return flutter.get_people()
+
+@app.route('/flutter/addPeople', methods=["POST"])
+def add_people():
+    return flutter.add_people()
 
 if __name__ == '__main__':
     app.run(debug=True)
